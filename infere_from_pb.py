@@ -228,17 +228,18 @@ def unmold_detections(detections, mrcnn_mask, original_image_shape, image_shape,
         mrcnn_mask: [N, height, width, num_classes]
         original_image_shape: [H, W, C] Original image shape before resizing
         image_shape: [H, W, C] Shape of the image after resizing and padding
-        window: [y1, x1, y2, x2] Pixel coordinates of box in the image where the real
+        window: [y1, x1, y2, x2] Pixel coordinates of real
                 image is excluding the padding.
 
         Returns:
         boxes: [N, (y1, x1, y2, x2)] Bounding boxes in pixels
         class_ids: [N] Integer class IDs for each bounding box
         scores: [N] Float probability scores of the class_id
-        masks: [height, width, num_instances] Instance masks
+        masks: [height, width, num_instances] Instance masks, mask in orginal image
         """
     # How many detections do we have?
     # Detections array is padded with zeros. Find the first class_id == 0.
+    # If we set 100 detection, but only detect 80. The left 20 would be class 0 at the end of detection array, harold.
     zero_ix = np.where(detections[:, 4] == 0)[0]
     N = zero_ix[0] if zero_ix.shape[0] > 0 else detections.shape[0]
 
@@ -250,7 +251,7 @@ def unmold_detections(detections, mrcnn_mask, original_image_shape, image_shape,
 
     # Translate normalized coordinates in the resized image to pixel
     # coordinates in the original image before resizing
-    window = utils.norm_boxes(window, image_shape[:2])
+    window = utils.norm_boxes(window, image_shape[:2]) #image shape after resizing and padding
     wy1, wx1, wy2, wx2 = window
     shift = np.array([wy1, wx1, wy1, wx1])
     wh = wy2 - wy1  # window height
